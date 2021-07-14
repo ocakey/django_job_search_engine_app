@@ -1,0 +1,257 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Job Search</title>
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.3.1/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.3.1/mapbox-gl.css' rel='stylesheet'/>
+    <link rel="stylesheet" href="{% static 'css/bootstrap.css' %}">
+    <script src="{% static 'js/bootstrap.js' %}"></script>
+</head>
+<body>
+<form action="" method="POST"> {% csrf_token %}
+    <div>
+        <label>Job Title </label>
+        <input type="text" name="{{ form.job_title.name }}" id="{{ form.job_title.name }}"  {% if form.job_title.value != None %}value="{{ form.job_title.value|stringformat:'s' }}" {% endif %}>
+        <label>Job Specialization </label>
+        <input type="text" name="{{ form.job_special.name }}" {% if form.job_special.value != None %}value="{{ form.job_special.value|stringformat:'s' }}" {% endif %}>
+        <label>Location</label>
+        <input type="text" name="{{ form.location.name }}" {% if form.location.value != None %}value="{{ form.location.value|stringformat:'s' }}" {% endif %}>
+        <!-- <label>Job Title </label>
+             {{ form.job_title }}
+         <label>Job Specialization </label>
+             {{ form.job_special }}
+         <label>Location</label>
+             {{ form.location }} -->
+        <input type="Submit" name="submit" value="Submit"/>
+        <input type="text" name="{{ form.date_posted.name }}" id="{{ form.date_posted.name }}" {% if form.date_posted.value != None %}value="{{ form.date_posted.value|stringformat:'s' }}" {% endif %}>
+        <select name="date_select" id="date_select">
+            <option value="default">Any Time</option>
+            <option value="1day">Last 24 Hours</option>
+            <option value="3day">Last 3 Days</option>
+            <option value="1week">Last 7 Days</option>
+            <option value="2week">Last 14 Days</option>
+            <option value="1month">Last 30 Days</option>
+        </select>
+
+    </div>
+            <div class="search-btn"> <!--SEARCH BUTTON-->
+            <button type="button" name="clear" id="clear" value="Clear" title="Clear">Test<a href="#"></a></i></button>
+        </div>
+</form>
+
+
+<h1>Recent Searches</h1>
+{% if search_history != "" %}
+{% for instance in search_history %}
+<p>{{ instance.job_title }} - {{ instance.special }} - {{ instance.location }} - {{ instance.exp_date }}</p>
+{% endfor %}
+{% endif %}
+<div id='map' style='width: 800px; height: 300px;'></div>
+<script>
+    mapboxgl.accessToken = '{{ mapbox_access_token }}';
+    var map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/dark-v10',
+        center: [121.7740, 12.879],
+        zoom: 4
+    });
+
+    map.on('load', function () {
+// Add a new source from our GeoJSON data and
+// set the 'cluster' option to true. GL-JS will
+// add the point_count property to your source data.
+        map.addSource('jobs', {
+            type: 'geojson',
+// Point to GeoJSON data. This example visualizes all M1.0+ earthquakes
+// from 12/22/15 to 1/21/16 as logged by USGS' Earthquake hazards program.
+            data: 'data.geojson',
+            cluster: true,
+            clusterMaxZoom: 14, // Max zoom to cluster points on
+            clusterRadius: 50 // Radius of each cluster when clustering points (defaults to 50)
+        });
+
+        map.addLayer({
+            id: 'clusters',
+            type: 'circle',
+            source: 'jobs',
+            filter: ['has', 'point_count'],
+            paint: {
+// Use step expressions (https://docs.mapbox.com/mapbox-gl-js/style-spec/#expressions-step)
+// with three steps to implement three types of circles:
+//   * Blue, 20px circles when point count is less than 100
+//   * Yellow, 30px circles when point count is between 100 and 750
+//   * Pink, 40px circles when point count is greater than or equal to 750
+                'circle-color': [
+                    'step',
+                    ['get', 'point_count'],
+                    '#51bbd6',
+                    100,
+                    '#f1f075',
+                    750,
+                    '#f28cb1'
+                ],
+                'circle-radius': [
+                    'step',
+                    ['get', 'point_count'],
+                    20,
+                    100,
+                    30,
+                    750,
+                    40
+                ]
+            }
+        });
+
+        map.addLayer({
+            id: 'cluster-count',
+            type: 'symbol',
+            source: 'jobs',
+            filter: ['has', 'point_count'],
+            layout: {
+                'text-field': '{point_count_abbreviated}',
+                'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+                'text-size': 12
+            }
+        });
+
+        map.addLayer({
+            id: 'unclustered-point',
+            type: 'circle',
+            source: 'jobs',
+            filter: ['!', ['has', 'point_count']],
+            paint: {
+                'circle-color': '#11b4da',
+                'circle-radius': 4,
+                'circle-stroke-width': 1,
+                'circle-stroke-color': '#fff'
+            }
+        });
+
+// inspect a cluster on click
+        map.on('click', 'clusters', function (e) {
+            var features = map.queryRenderedFeatures(e.point, {
+                layers: ['clusters']
+            });
+            var clusterId = features[0].properties.cluster_id;
+            map.getSource('jobs').getClusterExpansionZoom(
+                clusterId,
+                function (err, zoom) {
+                    if (err) return;
+
+                    map.easeTo({
+                        center: features[0].geometry.coordinates,
+                        zoom: zoom
+                    });
+                }
+            );
+        });
+
+// When a click event occurs on a feature in
+// the unclustered-point layer, open a popup at
+// the location of the feature, with
+// description HTML from its properties.
+        map.on('click', 'unclustered-point', function (e) {
+            var coordinates = e.features[0].geometry.coordinates.slice();
+            var job_title = e.features[0].properties.name;
+            var location = e.features[0].properties.city;
+
+
+// Ensure that if the map is zoomed out such that
+// multiple copies of the feature are visible, the
+// popup appears over the copy being pointed to.
+            while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+                coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+            }
+
+            new mapboxgl.Popup()
+                .setLngLat(coordinates)
+                .setHTML(
+                    'Job Name: ' + job_title + '<br>Location: ' + location
+                )
+                .addTo(map);
+        });
+
+        map.on('mouseenter', 'clusters', function () {
+            map.getCanvas().style.cursor = 'pointer';
+        });
+        map.on('mouseleave', 'clusters', function () {
+            map.getCanvas().style.cursor = '';
+        });
+    });
+</script>
+<div>
+    <h2>Search Results</h2>
+    {% if p.count != 0 %}
+    <h2>Page {{ page.number }} out of {{ p.num_pages }} Total Results: {{ p.count }} </h2>
+    {% endif %}
+    <hr>
+
+    {% if submitbutton == "Submit" %}
+    {% if job_recommend != "" and job_recommend != "loc_not_ph" %}
+    <h1>Search Results</h1>
+    {% for instance in page %}
+    <p>{{ instance.id }} - {{ instance.job_title }} - {{ instance.location }} - {{ instance.website }}</p>
+    {% endfor %}
+    {% elif job_recommend == "loc_not_ph" %}
+    <p>Location search is limited to Philippines only</p>
+    {% else %}
+    <p>We couldn't find any jobs matching your search</p>
+    {% endif %}
+
+    {% endif %}
+    <!--
+    {% if total_page_num > 1 and submit_start is True %}
+        {% if page.has_previous %}
+            <a href="?page={{ page.previous_page_number }}">Previous Page</a>
+        {% endif %}
+        {% if page.has_next %}
+            <a href="?page={{ page.next_page_number }}">Next Page</a>
+        {% endif %}
+    {% endif %} -->
+
+    {% if total_page_num > 1 and submit_start is True %}
+    <ul class="pagination">
+        {% if page.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page={{ page.previous_page_number }}">Previous</a></li>
+        {% else %}
+        <li class="page-item"><a class="page-link" disabled>Previous</a></li>
+        {% endif %}
+
+
+        {% if page.number|add:'-2' > 1 %}
+        <li class="page-item"><a class="page-link" href="?page={{ page.number|add:'-2' }}">&hellip;</a></li>
+        {% endif %}
+
+        {% for i in page.paginator.page_range %}
+        {% if page.number == i %}
+        <li class="active page-item"><span class="active page-link">{{ i }} <span
+                class="sr-only page-item">(current)</span></span>
+        </li>
+        {% elif i > page.number|add:'-3' and i < page.number|add:'3' %}
+        <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+        {% endif %}
+        {% endfor %}
+
+        {% if page.paginator.num_pages > page.number|add:'2' %}
+        <li class="page-item"><a class="page-link" href="?page={{ page.number|add:'2' }}">&hellip;</a></li>
+        {% endif %}
+
+
+        {% if page.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ page.next_page_number }}">Next</a></li>
+        {% else %}
+        <li class="page-item"><a class="page-link" disabled>Next</a></li>
+        {% endif %}
+    </ul>
+    {% endif %}
+
+</body>
+</html>
+
+<script>
+    document.getElementById("clear").addEventListener("click", function() {
+    document.getElementById("date_posted").value = document.getElementById("date_select").value;
+});
+</script>

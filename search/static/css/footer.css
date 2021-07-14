@@ -1,0 +1,67 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@500&display=swap");
+*{
+    margin: 0;
+    padding: 0;
+}
+footer{
+    padding: 50px 50px;
+    background: #15262f;
+    color: white;
+    height: auto;
+    text-align: center;
+}
+
+footer p{
+    color: #aaaaaa;
+    font-family: 'Montserrat', sans-serif;
+}
+footer ul li{
+    padding: 5px 5px;
+    color: #aaaaaa;
+    list-style: none;
+    display: inline-block;
+}
+footer li a{
+    text-decoration: none;
+    font-size: small;
+    color: #aaaaaa;
+    font-family: 'Montserrat', sans-serif;
+}
+footer li a:hover{
+    color: white;
+    cursor: pointer;
+    visibility: visible;
+    text-decoration: underline;
+}
+footer #btnToTop{
+    position: relative;
+    float: right;
+    background-color: transparent;
+    width: 50px;
+    height: 50px;
+    text-align: center;
+    bottom: 30px;
+    right: 30px;
+    border-radius: 5px;
+    border-style: solid;
+    border-color: white;
+    transition: 0.5s;
+    border-width: 2px;
+    z-index: 97;
+    padding: 15px;
+}
+footer #btnToTop:hover{
+    cursor: pointer;
+    background-color: #ff5349;
+}
+button[title="Back to Top"] .fas{
+    color: white;
+}
+@media screen and (max-width: 1270px) {
+    footer{
+        text-align: center;
+        width: auto;
+        margin: 0;
+    }
+}

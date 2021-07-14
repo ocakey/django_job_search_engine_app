@@ -1,0 +1,481 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<title>iSeek | Search Job Openings Near You!</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="{% static 'visuals/icon_HJl_icon.ico' %}">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <script src="https://kit.fontawesome.com/45b9d8294f.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="{% static 'css/header.css' %}">
+    <link rel="stylesheet" href="{% static 'css/page_wrapper.css' %}">
+    <link rel="stylesheet" href="{% static 'css/footer.css' %}">
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.3.1/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.3.1/mapbox-gl.css' rel='stylesheet'/>
+
+
+</head>
+
+<body>
+    <header id="logged"><!--NAVBAR-->
+        <h1><a href="/"><img src="{% static 'visuals/iSeek LOGO.png' %}" title="iSeek Home"></a></h1>
+    </header>
+
+    <form class="search-div" action="" method="POST"> {% csrf_token %}
+
+        <div class="search-box">
+            <input type="text" class="search-txt" placeholder="Job title" name="{{ form.job_title.name }}" id="{{ form.job_title.name }}" {% if form.job_title.value != None %}value="{{ form.job_title.value|stringformat:'s' }}"{% endif %}>
+            <a class="icon"><i class="fas fa-suitcase icon-2x"></i></a>
+        </div>
+        <div class="search-box">
+            <input type="text" class="search-txt" placeholder="Area, City or Town" name="{{ form.location.name }}" id="{{ form.location.name }}" {% if form.location.value != None %}value="{{ form.location.value|stringformat:'s' }}"{% endif %}>
+            <a class="icon"><i class="fas fa-map-marker-alt icon-2x"></i></a>
+        </div>
+
+        <div class="container">
+
+            <div class="select-box">
+                <div class="options-container"><!--LIST OF SPECIALIZATIONS-->
+                    <div class="option">
+                        <input type="radio" class="radio" id="JS" name="category">
+                        <label for="JS">Job Specialization</label>
+                    </div>
+                    <div class="option">
+                        <input type="radio" class="radio" id="AF" name="category">
+                        <label for="AF">Accounting/Finance</label>
+                    </div>
+                    <div class="option">
+                        <input type="radio" class="radio" id="SM" name="category">
+                        <label for="SM">Sales/Marketing</label>
+                    </div>
+                    <div class="option">
+                        <input type="radio" class="radio" id="AMC" name="category">
+                        <label for="AMC">Arts/Media/Communications</label>
+                    </div>
+                    <div class="option">
+                        <input type="radio" class="radio" id="S" name="category">
+                        <label for="S">Services</label>
+                    </div>
+                    <div class="option">
+                        <input type="radio" class="radio" id="HR" name="category">
+                        <label for="HR">Hotel/Restaurant</label>
+                    </div>
+                    <div class="option">
+                        <input type="radio" class="radio" id="ET" name="category">
+                        <label for="ET">Education/Training</label>
+                    </div>
+                    <div class="option">
+                        <input type="radio" class="radio" id="IT" name="category">
+                        <label for="IT">Computer/Information Technology</label>
+                    </div>
+                    <div class="option">
+                        <input type="radio" class="radio" id="E" name="category">
+                        <label for="E">Engineering</label>
+                    </div>
+                    <div class="option">
+                        <input type="radio" class="radio" id="M" name="category">
+                        <label for="M">Manufacturing</label>
+                    </div>
+                    <div class="option">
+                        <input type="radio" class="radio" id="BC" name="category">
+                        <label for="BC">Building/Construction</label>
+                    </div>
+                    <div class="option">
+                        <input type="radio" class="radio" id="SCI" name="category">
+                        <label for="SCI">Sciences</label>
+                    </div>
+                    <div class="option">
+                        <input type="radio" class="radio" id="HC" name="category">
+                         <label for="HC">Healthcare</label>
+                    </div>
+                    <div class="option">
+                        <input type="radio" class="radio" id="O" name="category">
+                        <label for="O">Others</label>
+                    </div>
+                </div>
+
+
+                <div class="selected"><!--MAIN SELECT BOX-->
+                    {% if form.job_special.value == "Job Specialization" or form.job_special.value == "" %}
+                    <p id="selected-text">Job Specialization</p>
+                    {% else %}
+                    <p id="selected-text">{{ form.job_special.value }}</p>
+                    {% endif %}
+                    <input type="text" id="{{ form.job_special.name }}" name="{{ form.job_special.name }}" {% if form.job_special.value != "Job Specialization" %} value="{{ form.job_special.value|stringformat:'s' }}"{% endif %}>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="search-btn"> <!--SEARCH BUTTON-->
+            <button type="Submit" name="submit" value="Submit" title="Search"><i class="fas fa-search icon-3x"><a href="#"></a></i></button>
+        </div>
+        <div class="clear-btn"> <!--CLEAR BUTTON-->
+            <button type="button" name="clear" id="clear" value="Clear" title="Clear"><i class="fas fa-times icon-3x"><a href="#"></a></i></button>
+        </div>
+        <input type="text" name="{{ form.date_posted.name }}" id="{{ form.date_posted.name }}" {% if form.date_posted.value != None %}value="{{ form.date_posted.value|stringformat:'s' }}" {% endif %} hidden>
+    </form>
+
+    <div class="recent-div">
+            <div class="date-container"><!--DATE POSTED-->
+
+            <div class="time-box">
+
+                <div class="time-options-con">
+                    <div class="time-option">
+                        <input type="radio" class="radio" id="any" name="category">
+                        <label for="any">Any Time</label>
+                        <a for="any" hidden>default</a>
+                    </div>
+                    <div class="time-option">
+                        <input type="radio" class="radio" id="24" name="category">
+                        <label for="24">Last 24 hours</label>
+                        <a for="any" hidden>1day</a>
+                    </div>
+
+                    <div class="time-option">
+                        <input type="radio" class="radio" id="3" name="category">
+                        <label for="3">Last 3 days</label>
+                        <a for="any" hidden>3day</a>
+                    </div>
+                    <div class="time-option">
+                        <input type="radio" class="radio" id="7" name="category">
+                        <label for="7">Last 7 days</label>
+                        <a for="any" hidden>1week</a>
+                    </div>
+
+                    <div class="time-option">
+                        <input type="radio" class="radio" id="14" name="category">
+                        <label for="14">Last 14 days</label>
+                        <a for="any" hidden>2week</a>
+                    </div>
+                    <div class="time-option">
+                        <input type="radio" class="radio" id="30" name="category">
+                        <label for="30">Last 30 days</label>
+                        <a for="any" hidden>1month</a>
+                    </div>
+                </div>
+
+                <div class="selected-time"><!--SELECTED BOX-->
+                    {% if date_posted == "default" %}
+                    <p id="time-text">Any Time</p>
+                    {% elif date_posted == "1day" %}
+                    <p id="time-text">Last 24 Hours</p>
+                    {% elif date_posted == "3day" %}
+                    <p id="time-text">Last 3 Days</p>
+                    {% elif date_posted == "1week" %}
+                    <p id="time-text">Last 7 Days</p>
+                    {% elif date_posted == "2week" %}
+                    <p id="time-text">Last 14 Days</p>
+                    {% elif date_posted == "1month" %}
+                    <p id="time-text">Last 1 Month</p>
+                    {% else %}
+                    <p id="time-text">Date Posted</p>
+                    {% endif %}
+                    <input type="text" id="date" name=""></input>
+                </div>
+            </div>
+        </div><!--END OF DATE POSTED-->
+        <div class="recent-txt">
+
+            <h4>Recent Searches</h4>
+        </div>
+        <div class="vl"></div>
+        <div class="recent-container">
+            {% if search_history != "" %}
+                {% for instance in search_history %}
+                <div>{{ instance.job_title }} {{ instance.location }} {{ instance.special }}</div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="page-wrapper"> <!--DASHBOARD-->
+
+        {% if submit_start is False or job_recommend == "" or job_recommend == "loc_not_ph" %}
+        <!--IMAGE SLIDER-->
+        <div id="slider">
+            <!--Hidden Radio Buttons-->
+            <input type="radio" name="images" id="i1" checked>
+            <input type="radio" name="images" id="i2">
+            <div class="images">
+                <div class="slide_img" id="one"><img src="{% static 'slideshow/banner_1.png' %}"></div>
+                <div class="slide_img" id="two"><img src="{% static 'slideshow/banner_2.png' %}"></div>
+            </div>
+            <!--Visible Buttons-->
+            <div class="nav">
+               <label class="dots" id="dot1" for="i1"></label>
+               <label class="dots" id="dot2" for="i2"></label>
+            </div>
+        </div><!--END OF IMAGE SLIDER-->
+        {% else %}
+        <div id='map' ></div>
+<script>
+    mapboxgl.accessToken = '{{ mapbox_access_token }}';
+    var map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/dark-v10',
+        center: [121.7740,12.879],
+        zoom: 4
+    });
+
+map.on('load', function () {
+// Add a new source from our GeoJSON data and
+// set the 'cluster' option to true. GL-JS will
+// add the point_count property to your source data.
+map.addSource('jobs', {
+type: 'geojson',
+// Point to GeoJSON data. This example visualizes all M1.0+ earthquakes
+// from 12/22/15 to 1/21/16 as logged by USGS' Earthquake hazards program.
+data: 'data.geojson',
+cluster: true,
+clusterMaxZoom: 14, // Max zoom to cluster points on
+clusterRadius: 50 // Radius of each cluster when clustering points (defaults to 50)
+});
+
+map.addLayer({
+id: 'clusters',
+type: 'circle',
+source: 'jobs',
+filter: ['has', 'point_count'],
+paint: {
+// Use step expressions (https://docs.mapbox.com/mapbox-gl-js/style-spec/#expressions-step)
+// with three steps to implement three types of circles:
+//   * Blue, 20px circles when point count is less than 100
+//   * Yellow, 30px circles when point count is between 100 and 750
+//   * Pink, 40px circles when point count is greater than or equal to 750
+'circle-color': [
+'step',
+['get', 'point_count'],
+'#51bbd6',
+100,
+'#f1f075',
+750,
+'#f28cb1'
+],
+'circle-radius': [
+'step',
+['get', 'point_count'],
+20,
+100,
+30,
+750,
+40
+]
+}
+});
+
+map.addLayer({
+id: 'cluster-count',
+type: 'symbol',
+source: 'jobs',
+filter: ['has', 'point_count'],
+layout: {
+'text-field': '{point_count_abbreviated}',
+'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+'text-size': 12
+}
+});
+
+map.addLayer({
+id: 'unclustered-point',
+type: 'circle',
+source: 'jobs',
+filter: ['!', ['has', 'point_count']],
+paint: {
+'circle-color': '#11b4da',
+'circle-radius': 4,
+'circle-stroke-width': 1,
+'circle-stroke-color': '#fff'
+}
+});
+
+// inspect a cluster on click
+map.on('click', 'clusters', function (e) {
+var features = map.queryRenderedFeatures(e.point, {
+layers: ['clusters']
+});
+var clusterId = features[0].properties.cluster_id;
+map.getSource('jobs').getClusterExpansionZoom(
+clusterId,
+function (err, zoom) {
+if (err) return;
+
+map.easeTo({
+center: features[0].geometry.coordinates,
+zoom: zoom
+});
+}
+);
+});
+
+// When a click event occurs on a feature in
+// the unclustered-point layer, open a popup at
+// the location of the feature, with
+// description HTML from its properties.
+map.on('click', 'unclustered-point', function (e) {
+var coordinates = e.features[0].geometry.coordinates.slice();
+var job_title = e.features[0].properties.name;
+var location = e.features[0].properties.city;
+
+
+// Ensure that if the map is zoomed out such that
+// multiple copies of the feature are visible, the
+// popup appears over the copy being pointed to.
+while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+}
+
+new mapboxgl.Popup()
+.setLngLat(coordinates)
+.setHTML(
+'Job Name: ' + job_title + '<br>Location: ' + location
+)
+.addTo(map);
+});
+
+map.on('mouseenter', 'clusters', function () {
+map.getCanvas().style.cursor = 'pointer';
+});
+map.on('mouseleave', 'clusters', function () {
+map.getCanvas().style.cursor = '';
+});
+});
+</script>
+        {% endif %}
+
+        {% if p.count != 0 and submit_start is True %}
+        <h2 id="Results">Search Results</h2>
+        <hr>
+        <h5>Page {{ page.number }} out of {{ p.num_pages }} Total Results: {{ p.count }} </h5>
+        {% endif %}
+        <!--PAGINATION-->
+        <div class="pagination">
+            <ul>
+            {% if total_page_num > 1 and submit_start is True %}
+            {% if page.has_previous %}
+            <div class="btn prev">
+                <li><button type="button" value="button" id="Prev" title="Previous"><a href="?page={{ page.previous_page_number }}"><i class="fas fa-chevron-left"></i> Prev</a></button></li>
+            </div>
+            {% endif %}
+
+
+            {% for i in page.paginator.page_range %}
+                {% if page.number == i %}
+                    <li class="numb active"><a class="active">{{ i }}</a></li>
+                {% elif i > page.number|add:'-3' and i < page.number|add:'3' %}
+                    <li class="numb"><a href="?page={{ i }}">{{ i }}</a></li>
+                {% endif %}
+            {% endfor %}
+
+
+            {% if page.has_next %}
+            <div class="btn next">
+                <li><button onclick="myFunction()" type="button" value="button" id="Next" title="Next"><a href="?page={{ page.next_page_number }}">Next <i class="fas fa-chevron-right"></i></a></button></li>
+            </div>
+            {% endif %}
+            {% endif %}
+            </ul>
+        </div>
+        <div class="query-results"><!--JOB RESULTS-->
+            {% if submitbutton == "Submit" %}
+                {% if job_recommend != "" and job_recommend != "loc_not_ph" %}
+                    {% for instance in page %}
+            <a onclick="window.open('{{ instance.url }}', '_blank');" id="result-container">
+                <div class="info">
+                    <h3>{{ instance.job_title }}</h3>
+                    <ul>
+                        <li><i class="fas fa-trademark"></i>{{ instance.company }}</li>
+                        <li><i class="fas fa-map-marker-alt"></i>{{ instance.location }}</li>
+
+                        <li><i class="fas fa-calendar-alt"></i><p>{% for item in time_results %}{% if instance.id == item.0 %}{{ item.1 }}{% endif %}{% endfor %}</p></li>
+
+
+                    </ul>
+                </div>
+                <div class="image">
+                    {% if instance.website == "jobstreet" %}
+                    <img src="{% static 'visuals/logo3.png' %}"/>
+                    {% elif instance.website == "bestjobsph" %}
+                    <img src="{% static 'visuals/logo4.png' %}"/>
+                    {% elif instance.website == "glassdoor" %}
+                    <img src="{% static 'visuals/logo5.png' %}"/>
+                    {% endif %}
+                </div>
+            </a>
+            {% endfor %}
+            {% elif job_recommend == "loc_not_ph" %}
+			<div class="no-results">
+                <p>Sorry, location is only limited to the Philippines</p>
+            </div>
+            {% else %}
+			<div class="no-results">
+                <p>Sorry, We couldn't find any jobs matching your search</p>
+            </div>
+            {% endif %}
+            {% endif %}
+
+
+        </div>
+        <!--PAGINATION-->
+        <div class="pagination">
+            <ul>
+            {% if total_page_num > 1 and submit_start is True %}
+            {% if page.has_previous %}
+            <div class="btn prev">
+                <li><button type="button" value="button" id="Prev" title="Previous"><a href="?page={{ page.previous_page_number }}"><i class="fas fa-chevron-left"></i> Prev</a></button></li>
+            </div>
+            {% endif %}
+
+
+            {% for i in page.paginator.page_range %}
+                {% if page.number == i %}
+                    <li class="numb active"><a class="active">{{ i }}</a></li>
+                {% elif i > page.number|add:'-3' and i < page.number|add:'3' %}
+                    <li class="numb"><a href="?page={{ i }}">{{ i }}</a></li>
+                {% endif %}
+            {% endfor %}
+
+
+            {% if page.has_next %}
+            <div class="btn next">
+                <li><button type="button" value="button" id="Next" title="Next"><a href="?page={{ page.next_page_number }}">Next <i class="fas fa-chevron-right"></i></a></button></li>
+            </div>
+            {% endif %}
+            {% endif %}
+            </ul>
+        </div>
+
+    </div>
+
+
+    <footer> <!--FOOTER-->
+        <img src="{% static 'visuals/Tech Po Solutions LOGO.png' %}">
+        <p>&copy <script>
+                    var CurrentYear = new Date().getFullYear()
+                    document.write(CurrentYear)
+                </script> Tech Po Solutions All Rights Reserved.</p>
+        <ul>
+            <li><a href="privacy" id="privacy" title="Privacy Policy">Privacy Policy</a></li>
+            <li>|</li>
+            <li><a href="terms" id="terms" title="Terms of Service">Terms of Service</a></li>
+        </ul>
+        <button id="btnToTop" title="Back to Top"><i class="fas fa-arrow-up icon-5x"></i></button>
+    </footer>
+    <script src="{% static 'js/main.js' %}"></script>
+
+</body>
+</html>
+
+<script>
+    document.getElementById("clear").addEventListener("click", function() {
+    document.getElementById("job_title").value = "";
+    document.getElementById("location").value = "";
+    document.getElementById("job_special").value = "";
+    document.getElementById("date_posted").value = "";
+    document.getElementById("time-text").textContent = "Date Posted";
+    document.getElementById("selected-text").textContent = "Job Specialization";
+});
+</script>
+
